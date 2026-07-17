@@ -1,3 +1,4 @@
+
 # gui.py
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -36,6 +37,24 @@ class App:
 
         self.update_all()
         self.root.mainloop()
+
+        self.tray = TrayIcon(self.root)
+
+        # Переназначаем событие закрытия окна
+        self.root.protocol("WM_DELETE_WINDOW", self.hide_window)
+
+        self.update_all()
+        self.root.mainloop()
+
+    def hide_window(self):
+        """Сворачиваем в трей вместо закрытия"""
+        self.root.withdraw()   # скрываем окно
+
+    # метод show_window уже есть в TrayIcon, но можно добавить и в App
+    def show_window(self):
+        self.root.deiconify()
+        self.root.lift()
+        self.root.focus_force()
 
     def update_stats(self):
         p = self.game.player
