@@ -11,8 +11,10 @@ class Game:
 
     def complete_quest(self, quest_id):
         quest = self.db.get_quest(quest_id)
-        if not quest or not quest['is_active']:
-            return False, "Квест неактивен или не найден"
+        if not quest:
+            return False, "Квест не найден"
+        if not quest['is_active']:
+            return False, "Квест уже неактивен"
 
         # Начисляем награду
         self.player['experience'] += quest['reward_exp']
@@ -25,7 +27,9 @@ class Game:
             self.player['level'] += 1
             level_up = True
 
+        # Для повторяющихся – обновляем last_completed, для обычных – деактивируем
         self.db.deactivate_quest(quest_id)
+
         self.db.add_history('quest_complete', quest_id=quest_id,
                             details=f"{quest['title']} выполнен")
         self._save_player()
@@ -33,13 +37,19 @@ class Game:
 
     def fail_quest(self, quest_id):
         quest = self.db.get_quest(quest_id)
-        if not quest or not quest['is_active']:
-            return False, "Квест неактивен или не найден"
+        if not quest:
+            return False, "Квест не найден"
+        if not quest['is_active']:
+            return False, "Квест уже неактивен"
 
+        # Применяем штраф
         self.player['experience'] = max(0, self.player['experience'] - quest['penalty_exp'])
         self.player['energy'] = max(0, self.player['energy'] - quest['penalty_energy'])
 
+        # Для повторяющихся – обновляем last_completed (чтобы нельзя было провалить дважды за день)
+        # Для обычных – деактивируем
         self.db.deactivate_quest(quest_id)
+
         self.db.add_history('quest_fail', quest_id=quest_id,
                             details=f"{quest['title']} провален")
         self._save_player()
